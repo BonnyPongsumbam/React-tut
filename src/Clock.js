@@ -98,6 +98,7 @@
 
 // export default Clock;
 
+import axios from "axios";
 import React, { useEffect, useState } from "react";
 import { Button, Col, Container, Row } from "react-bootstrap";
 
@@ -144,6 +145,23 @@ export const Clock = () => {
           </Col>
         </Row>
       </Container>
+    </div>
+  );
+};
+
+export const TemperatureInCelcius = () => {
+  let [users, setUsers] = useState([]);
+
+  useEffect(() => {
+    axios
+      .get("https://6274a23d3d2b5100742e83db.mockapi.io/test01")
+      .then((response) => setUsers(response.data));
+  }, []);
+
+  return (
+    <div>
+      <h2>The JSON below is loaded from an external API!</h2>
+      <code>{JSON.stringify(users)}</code>
     </div>
   );
 };

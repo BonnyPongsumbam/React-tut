@@ -1,5 +1,5 @@
 import React from 'react'
-import { Clock, Weather } from './Clock'
+import { Clock, TemperatureInCelcius, Weather } from './Clock'
 import {Navbar} from './Navbar'
 
 
@@ -11,6 +11,7 @@ const App = () => {
     <Navbar/>
     <Weather/>
     <Clock/>
+    <TemperatureInCelcius/>
     
 
     </div>
