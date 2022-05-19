@@ -153,15 +153,40 @@ export const TemperatureInCelcius = () => {
   let [users, setUsers] = useState([]);
 
   useEffect(() => {
-    axios
-      .get("https://6274a23d3d2b5100742e83db.mockapi.io/test01")
-      .then((response) => setUsers(response.data));
+
+
+    const options = {
+      method: 'GET',
+      url: 'https://weatherapi-com.p.rapidapi.com/ip.json',
+      params: {q: 'auto:ip'},
+      headers: {
+        'X-RapidAPI-Host': 'weatherapi-com.p.rapidapi.com',
+        'X-RapidAPI-Key': '91a8e198ebmsh0264a7959cfcfd1p1a08c2jsn14f58b165711'
+      }
+    };
+    
+    axios.request(options).then(function (response) {
+      setUsers(response.data);
+    }).catch(function (error) {
+      console.error(error);
+    });
   }, []);
 
   return (
-    <div>
-      <h2>The JSON below is loaded from an external API!</h2>
-      <code>{JSON.stringify(users)}</code>
-    </div>
+    <>
+      <code>
+        {users&&(users.map(({ip,contry_name})=> {
+          return(
+            <div>
+              <h2>{ip}</h2>
+            </div>
+          )
+        }))}
+        </code>
+      
+    </>
   );
 };
+
+
+
