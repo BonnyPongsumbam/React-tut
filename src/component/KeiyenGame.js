@@ -25,74 +25,107 @@ const KeiYenBoard = () => {
   const matrix = new Array(5).fill(0).map(() => new Array(5).fill(0));
   //Fill initial Position
   matrix[1][3] = 25;
-  matrix[4][4] = 11;
+  matrix[0][0] = 11;
   const [gridStatus, setGridStatus] = useState(matrix);
-  var InitialRow, InitialColummn, FinalRow, FinalColumn;
+  var InitialRow, InitialColumn, FinalRow, FinalColumn;
+
+  function ConvertCoordinatesToPosition(row, column) {
+
+    var ConversionMap = [[0,0],[0,1],[0,2],[0,3],[0,4],[1,0],[1,1],[1,2]];
+
+    for (let i = 0; i < ConversionMap.length; i++) {
+
+       let conRow = ConversionMap[i][0];
+       let conColumn = ConversionMap[i][1];
+
+       if (row == conRow && column == conColumn) {
+         return i;
+    }
+
+  }
+}
+
+  function checkValidPath(startRow, startColumn,endRow, endColumn) {
+
+    let start = ConvertCoordinatesToPosition(startRow,startColumn);
+    let end = ConvertCoordinatesToPosition(endRow,endColumn);
+    
+    //Not allow to move .
+    var move =[[0,6]]
+    
+     for(let i = 0; i < move.length; i++){
+        let Initial = move[i][0];
+        let Final = move[i][1];
+
+        if (start == Initial && end == Final ) {
+          return false;          
+        }
+     }
+    return true;
+  }
+
+
+
   function checkMoveFeasibility() {
        //Ok to move row
     if (
       InitialRow === FinalRow &&
-      Math.abs(FinalColumn - InitialColummn) === 1 &&
+      Math.abs(FinalColumn - InitialColumn) === 1 &&
       matrix[FinalRow][FinalColumn] === 0
     ) {
      
       alert("Ok");
-      if (gridStatus[InitialRow][InitialColummn] !== 0) {
+      if (gridStatus[InitialRow][InitialColumn] !== 0) {
         const myMatrix = gridStatus.slice();
-        myMatrix[FinalRow][FinalColumn] = myMatrix[InitialRow][InitialColummn];
-        myMatrix[InitialRow][InitialColummn] = 0;
+        myMatrix[FinalRow][FinalColumn] = myMatrix[InitialRow][InitialColumn];
+        myMatrix[InitialRow][InitialColumn] = 0;
         setGridStatus(myMatrix);
       
       }
        //Ok to move column
     } else if (
-      InitialColummn === FinalColumn &&
+      InitialColumn === FinalColumn &&
       Math.abs(FinalRow - InitialRow) === 1 &&
-      matrix[FinalRow][FinalColumn] === 0
+      matrix[FinalColumn][FinalRow] === 0
     ) {
      
+
+
       alert("Ok");
-      if (gridStatus[InitialRow][InitialColummn] !== 0) {
+      if (gridStatus[InitialRow][InitialColumn] !== 0) {
         const myMatrix = gridStatus.slice();
-        myMatrix[FinalRow][FinalColumn] = myMatrix[InitialRow][InitialColummn];
-        myMatrix[InitialRow][InitialColummn] = 0;
+        myMatrix[FinalRow][FinalColumn] = myMatrix[InitialRow][InitialColumn];
+        myMatrix[InitialRow][InitialColumn] = 0;
         setGridStatus(myMatrix);
       }}
-      //Ok to move diagonal
-     else if (
-      Math.abs(FinalRow - InitialRow) === 1 &&
-      Math.abs(FinalColumn - InitialColummn) === 1 &&
-      matrix[FinalRow][FinalColumn] === 0
-     
 
-     )
-     
-     {
-        alert("Ok");
-       
-        if (gridStatus[InitialRow][InitialColummn] !== 0) {
-          const myMatrix = gridStatus.slice();
-          myMatrix[FinalRow][FinalColumn] = myMatrix[InitialRow][InitialColummn];
-          myMatrix[InitialRow][InitialColummn] = 0;
-          setGridStatus(myMatrix);
-          console.log(myMatrix);
-        }
-        
-      }
      else {
-      alert("Not Ok");
+
+      let ret = checkValidPath(InitialRow,InitialColumn,FinalRow,FinalColumn);
+
+      if (ret === true) {
+        alert("Ok");        
+      }
+      else {
+        alert("Not Ok");
+      }
+
+
+     
     }
+     
   }
   function handleClick(row, column) {
     InitialRow = FinalRow;
-    InitialColummn = FinalColumn;
+    InitialColumn = FinalColumn;
     FinalRow = row;
     FinalColumn = column;
     console.log(row, column);
-    // alert("Last Click " + InitialRow + " " + InitialColummn);
+    // alert("Last Click " + InitialRow + " " + InitialColumn);
     // alert("New Click " + row + " " + column);
     // alert("Trying to Move");
     checkMoveFeasibility();
+    
   }
   const DisplayRow = ({ rowitems, rowIndex }) => {
     return (
@@ -116,4 +149,5 @@ const KeiYenBoard = () => {
     </div>
   );
 };
+
 export default KeiYenBoard;
