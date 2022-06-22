@@ -16,8 +16,13 @@ const Square = (props) => {
   if (props.value / 20 > 1) {
     posItem = <Yen>{props.value % 20}</Yen>;
   }
+  const buttonRef = useRef(null);
   return (
-    <button className="square" onClick={props.onClick}>
+    <button
+      className="square"
+      ref={buttonRef}
+      onClick={() => props.myClick(buttonRef.current.getBoundingClientRect())}
+    >
       {posItem}
     </button>
   );
@@ -28,7 +33,13 @@ const KeiYenBoard = () => {
   matrix[1][3] = 25;
   matrix[0][0] = 11;
   const [gridStatus, setGridStatus] = useState(matrix);
-  var InitialRow, InitialColumn, FinalRow, FinalColumn;
+
+  const storeMiddlematrix = new Array(5)
+    .fill(0)
+    .map(() => new Array(5).fill(0).map(() => new Array(5).fill(0)));
+  const [middlePoints, setMiddlePoints] = useState(storeMiddlematrix);
+
+  var InitialRow, InitialColumn, FinalRow, FinalColumn, MidValues;
 
   function ConvertCoordinatesToPosition(row, column) {
     var ConversionMap = [
@@ -173,16 +184,29 @@ const KeiYenBoard = () => {
       }
     }
   }
-  function handleClick(row, column) {
+  function handleClick(row, column, rect,mid) {
+    MidValues = mid;
     InitialRow = FinalRow;
     InitialColumn = FinalColumn;
     FinalRow = row;
     FinalColumn = column;
     console.log(row, column);
+
+    const myMiddleMatrix = middlePoints.slice();
+    myMiddleMatrix[row][column][mid] =
+      rect.x +
+      "," +
+      rect.y +
+      "," +
+      (rect.x + rect.x + rect.width) / 2 +
+      "," +
+      (rect.y + rect.y + rect.height) / 2;
+    setMiddlePoints(myMiddleMatrix);
     // alert("Last Click " + InitialRow + " " + InitialColumn);
     // alert("New Click " + row + " " + column);
     // alert("Trying to Move");
     checkMoveFeasibility();
+    console.log(myMiddleMatrix);
   }
   const DisplayRow = ({ rowitems, rowIndex }) => {
     return (
@@ -190,7 +214,7 @@ const KeiYenBoard = () => {
         {rowitems.map((item, columnIndex) => (
           <Square
             value={item}
-            onClick={() => handleClick(rowIndex, columnIndex)}
+            myClick={(rect) => handleClick(rowIndex, columnIndex, rect)}
           ></Square>
         ))}
       </div>
