@@ -1,14 +1,14 @@
 import './App.css';
-import { Board } from './component/Board';
-import KeiYenBoard from './component/KeiyenGame';
+import React from 'react';
+import Route from "./routes"
 
 
 export const App=()=> {
  
   return (
     <div >
-    {/* <Board/> */}
-    <KeiYenBoard/>
+  <Route/>
+  
     </div>
   );
 }

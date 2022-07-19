@@ -1,13 +1,14 @@
 import React, { useState, useEffect, useRef } from "react";
 import "./BoardGame.css";
-
+const storeMiddlematrix = new Array(5)
+  .fill(0)
+  .map(() => new Array(5).fill(0).map(() => new Array(2).fill(0)));
 const Kei = (props) => {
   return <span style={{ color: "Red" }}>{props.children}</span>;
 };
 const Yen = (props) => {
   return <span style={{ color: "Green" }}>{props.children}</span>;
 };
-
 const Square = (props) => {
   let posItem = "";
   if (props.value / 10 > 1) {
@@ -17,12 +18,11 @@ const Square = (props) => {
     posItem = <Yen>{props.value % 20}</Yen>;
   }
   const buttonRef = useRef(null);
+  useEffect(() => {
+    props.myRefreshMiddlePoint(buttonRef.current.getBoundingClientRect());
+  }, []);
   return (
-    <button
-      className="square"
-      ref={buttonRef}
-      onClick={() => props.myClick(buttonRef.current.getBoundingClientRect())}
-    >
+    <button className="square" ref={buttonRef} onClick={() => props.myClick()}>
       {posItem}
     </button>
   );
@@ -33,14 +33,7 @@ const KeiYenBoard = () => {
   matrix[1][3] = 25;
   matrix[0][0] = 11;
   const [gridStatus, setGridStatus] = useState(matrix);
-
-  const storeMiddlematrix = new Array(5)
-    .fill(0)
-    .map(() => new Array(5).fill(0).map(() => new Array(5).fill(0)));
-  const [middlePoints, setMiddlePoints] = useState(storeMiddlematrix);
-
-  var InitialRow, InitialColumn, FinalRow, FinalColumn, MidValues;
-
+  var InitialRow, InitialColumn, FinalRow, FinalColumn;
   function ConvertCoordinatesToPosition(row, column) {
     var ConversionMap = [
       [0, 0],
@@ -69,21 +62,17 @@ const KeiYenBoard = () => {
       [4, 3],
       [4, 4],
     ];
-
     for (let i = 0; i < ConversionMap.length; i++) {
       let conRow = ConversionMap[i][0];
       let conColumn = ConversionMap[i][1];
-
       if (row === conRow && column === conColumn) {
         return i;
       }
     }
   }
-
   function checkValidPath(startRow, startColumn, endRow, endColumn) {
     let start = ConvertCoordinatesToPosition(startRow, startColumn);
     let end = ConvertCoordinatesToPosition(endRow, endColumn);
-
     //Not allow to move .
     var move = [
       [1, 5],
@@ -119,18 +108,15 @@ const KeiYenBoard = () => {
       [19, 23],
       [23, 19],
     ];
-
     for (let i = 0; i < move.length; i++) {
       let Initial = move[i][0];
       let Final = move[i][1];
-
       if (start === Initial && end === Final) {
         return false;
       }
     }
     return true;
   }
-
   function checkMoveFeasibility() {
     //Ok to move row
     if (
@@ -165,7 +151,6 @@ const KeiYenBoard = () => {
         FinalRow,
         FinalColumn
       );
-
       if (
         ret === true &&
         Math.abs(FinalRow - InitialRow) === 1 &&
@@ -184,51 +169,578 @@ const KeiYenBoard = () => {
       }
     }
   }
-  function handleClick(row, column, rect,mid) {
-    MidValues = mid;
-    InitialRow = FinalRow;
-    InitialColumn = FinalColumn;
-    FinalRow = row;
-    FinalColumn = column;
-    console.log(row, column);
-
-    const myMiddleMatrix = middlePoints.slice();
-    myMiddleMatrix[row][column][mid] =
-      rect.x +
-      "," +
-      rect.y +
-      "," +
-      (rect.x + rect.x + rect.width) / 2 +
-      "," +
-      (rect.y + rect.y + rect.height) / 2;
-    setMiddlePoints(myMiddleMatrix);
-    // alert("Last Click " + InitialRow + " " + InitialColumn);
-    // alert("New Click " + row + " " + column);
-    // alert("Trying to Move");
-    checkMoveFeasibility();
-    console.log(myMiddleMatrix);
-  }
   const DisplayRow = ({ rowitems, rowIndex }) => {
+    function handleClick(row, column) {
+      InitialRow = FinalRow;
+      InitialColumn = FinalColumn;
+      FinalRow = row;
+      FinalColumn = column;
+      checkMoveFeasibility();
+    }
+    function handleMiddlePointCal(rect, row, column) {
+      InitialRow = FinalRow;
+      InitialColumn = FinalColumn;
+      FinalRow = row;
+      FinalColumn = column;
+      // console.log(row, column);
+      // const myMiddleMatrix = middlePoints.slice();
+      let x = Math.floor((rect.x + rect.x + rect.width) / 2);
+      let y = Math.floor((rect.y + rect.y + rect.height) / 2);
+      storeMiddlematrix[row][column][0] = x;
+      storeMiddlematrix[row][column][1] = y;
+      console.log("mid Points", storeMiddlematrix[3][3]);
+    }
     return (
       <div>
         {rowitems.map((item, columnIndex) => (
           <Square
             value={item}
-            myClick={(rect) => handleClick(rowIndex, columnIndex, rect)}
+            myRefreshMiddlePoint={(rect) =>
+              handleMiddlePointCal(rect, rowIndex, columnIndex)
+            }
+            myClick={() => handleClick(rowIndex, columnIndex)}
           ></Square>
         ))}
       </div>
     );
   };
+
+  const [shouldRender, setRender] = useState(false);
+  useEffect(() => {
+    setRender(true);
+  }, []);
+
   return (
-    <div
-      style={{ display: "flex", flexDirection: "column", alignItems: "center" }}
-    >
-      {gridStatus.map((row, rowIndex) => (
-        <DisplayRow rowIndex={rowIndex} rowitems={row} />
-      ))}
+    <div>
+      <div
+        style={{
+          display: "flex",
+          flexDirection: "row",
+          alignItems: "center",
+          alignContent: "flex-end",
+          justifyContent: "center",
+        }}
+      >
+        <div style={{ position: "absolute" }}>
+          {gridStatus.map((row, rowIndex) => (
+            <DisplayRow rowIndex={rowIndex} rowitems={row} />
+          ))}
+        </div>
+        <svg style={{ height: "100vh", width: "100vw" }}>
+          {/* <line stroke-width="1px" stroke="#000000"  x1="205" y1="77" x2="821" y2="693" id="mySVG"/> */}
+          // ROW LINE
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][0][0]}
+            y1={storeMiddlematrix[0][0][1]}
+            x2={storeMiddlematrix[0][1][0]}
+            y2={storeMiddlematrix[0][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][1][0]}
+            y1={storeMiddlematrix[0][1][1]}
+            x2={storeMiddlematrix[0][2][0]}
+            y2={storeMiddlematrix[0][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][2][0]}
+            y1={storeMiddlematrix[0][2][1]}
+            x2={storeMiddlematrix[0][3][0]}
+            y2={storeMiddlematrix[0][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][3][0]}
+            y1={storeMiddlematrix[0][3][1]}
+            x2={storeMiddlematrix[0][4][0]}
+            y2={storeMiddlematrix[0][4][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][0][0]}
+            y1={storeMiddlematrix[1][0][1]}
+            x2={storeMiddlematrix[1][1][0]}
+            y2={storeMiddlematrix[1][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][1][0]}
+            y1={storeMiddlematrix[1][1][1]}
+            x2={storeMiddlematrix[1][2][0]}
+            y2={storeMiddlematrix[1][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][2][0]}
+            y1={storeMiddlematrix[1][2][1]}
+            x2={storeMiddlematrix[1][3][0]}
+            y2={storeMiddlematrix[1][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][3][0]}
+            y1={storeMiddlematrix[1][3][1]}
+            x2={storeMiddlematrix[1][4][0]}
+            y2={storeMiddlematrix[1][4][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][0][0]}
+            y1={storeMiddlematrix[2][0][1]}
+            x2={storeMiddlematrix[2][1][0]}
+            y2={storeMiddlematrix[2][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][1][0]}
+            y1={storeMiddlematrix[2][1][1]}
+            x2={storeMiddlematrix[2][2][0]}
+            y2={storeMiddlematrix[2][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][2][0]}
+            y1={storeMiddlematrix[2][2][1]}
+            x2={storeMiddlematrix[2][3][0]}
+            y2={storeMiddlematrix[2][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][3][0]}
+            y1={storeMiddlematrix[2][3][1]}
+            x2={storeMiddlematrix[2][4][0]}
+            y2={storeMiddlematrix[2][4][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][0][0]}
+            y1={storeMiddlematrix[3][0][1]}
+            x2={storeMiddlematrix[3][1][0]}
+            y2={storeMiddlematrix[3][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][1][0]}
+            y1={storeMiddlematrix[3][1][1]}
+            x2={storeMiddlematrix[3][2][0]}
+            y2={storeMiddlematrix[3][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][2][0]}
+            y1={storeMiddlematrix[3][2][1]}
+            x2={storeMiddlematrix[3][3][0]}
+            y2={storeMiddlematrix[3][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][3][0]}
+            y1={storeMiddlematrix[3][3][1]}
+            x2={storeMiddlematrix[3][4][0]}
+            y2={storeMiddlematrix[3][4][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[4][0][0]}
+            y1={storeMiddlematrix[4][0][1]}
+            x2={storeMiddlematrix[4][1][0]}
+            y2={storeMiddlematrix[4][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[4][1][0]}
+            y1={storeMiddlematrix[4][1][1]}
+            x2={storeMiddlematrix[4][2][0]}
+            y2={storeMiddlematrix[4][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[4][2][0]}
+            y1={storeMiddlematrix[4][2][1]}
+            x2={storeMiddlematrix[4][3][0]}
+            y2={storeMiddlematrix[4][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[4][3][0]}
+            y1={storeMiddlematrix[4][3][1]}
+            x2={storeMiddlematrix[4][4][0]}
+            y2={storeMiddlematrix[4][4][1]}
+            id="mySVG"
+          />
+          //COLUMN LINE
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][0][0]}
+            y1={storeMiddlematrix[0][0][1]}
+            x2={storeMiddlematrix[1][0][0]}
+            y2={storeMiddlematrix[1][0][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][0][0]}
+            y1={storeMiddlematrix[1][0][1]}
+            x2={storeMiddlematrix[2][0][0]}
+            y2={storeMiddlematrix[2][0][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][0][0]}
+            y1={storeMiddlematrix[2][0][1]}
+            x2={storeMiddlematrix[3][0][0]}
+            y2={storeMiddlematrix[3][0][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][0][0]}
+            y1={storeMiddlematrix[3][0][1]}
+            x2={storeMiddlematrix[4][0][0]}
+            y2={storeMiddlematrix[4][0][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][1][0]}
+            y1={storeMiddlematrix[0][1][1]}
+            x2={storeMiddlematrix[1][1][0]}
+            y2={storeMiddlematrix[1][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][1][0]}
+            y1={storeMiddlematrix[1][1][1]}
+            x2={storeMiddlematrix[2][1][0]}
+            y2={storeMiddlematrix[2][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][1][0]}
+            y1={storeMiddlematrix[2][1][1]}
+            x2={storeMiddlematrix[3][1][0]}
+            y2={storeMiddlematrix[3][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][1][0]}
+            y1={storeMiddlematrix[3][1][1]}
+            x2={storeMiddlematrix[4][1][0]}
+            y2={storeMiddlematrix[4][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][2][0]}
+            y1={storeMiddlematrix[0][2][1]}
+            x2={storeMiddlematrix[1][2][0]}
+            y2={storeMiddlematrix[1][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][2][0]}
+            y1={storeMiddlematrix[1][2][1]}
+            x2={storeMiddlematrix[2][2][0]}
+            y2={storeMiddlematrix[2][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][2][0]}
+            y1={storeMiddlematrix[2][2][1]}
+            x2={storeMiddlematrix[3][2][0]}
+            y2={storeMiddlematrix[3][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][2][0]}
+            y1={storeMiddlematrix[3][2][1]}
+            x2={storeMiddlematrix[4][2][0]}
+            y2={storeMiddlematrix[4][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][3][0]}
+            y1={storeMiddlematrix[0][3][1]}
+            x2={storeMiddlematrix[1][3][0]}
+            y2={storeMiddlematrix[1][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][3][0]}
+            y1={storeMiddlematrix[1][3][1]}
+            x2={storeMiddlematrix[2][3][0]}
+            y2={storeMiddlematrix[2][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][3][0]}
+            y1={storeMiddlematrix[2][3][1]}
+            x2={storeMiddlematrix[3][3][0]}
+            y2={storeMiddlematrix[3][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][3][0]}
+            y1={storeMiddlematrix[3][3][1]}
+            x2={storeMiddlematrix[4][3][0]}
+            y2={storeMiddlematrix[4][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][4][0]}
+            y1={storeMiddlematrix[0][4][1]}
+            x2={storeMiddlematrix[1][4][0]}
+            y2={storeMiddlematrix[1][4][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][4][0]}
+            y1={storeMiddlematrix[1][4][1]}
+            x2={storeMiddlematrix[2][4][0]}
+            y2={storeMiddlematrix[2][4][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][4][0]}
+            y1={storeMiddlematrix[2][4][1]}
+            x2={storeMiddlematrix[3][4][0]}
+            y2={storeMiddlematrix[3][4][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][4][0]}
+            y1={storeMiddlematrix[3][4][1]}
+            x2={storeMiddlematrix[4][4][0]}
+            y2={storeMiddlematrix[4][4][1]}
+            id="mySVG"
+          />
+          //DIAGONAL LINES left to right
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][0][0]}
+            y1={storeMiddlematrix[0][0][1]}
+            x2={storeMiddlematrix[1][1][0]}
+            y2={storeMiddlematrix[1][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][1][0]}
+            y1={storeMiddlematrix[1][1][1]}
+            x2={storeMiddlematrix[2][2][0]}
+            y2={storeMiddlematrix[2][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][2][0]}
+            y1={storeMiddlematrix[2][2][1]}
+            x2={storeMiddlematrix[3][3][0]}
+            y2={storeMiddlematrix[3][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][3][0]}
+            y1={storeMiddlematrix[3][3][1]}
+            x2={storeMiddlematrix[4][4][0]}
+            y2={storeMiddlematrix[4][4][1]}
+            id="mySVG"
+          />
+          //DIAGONAL LINES right to left
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][4][0]}
+            y1={storeMiddlematrix[0][4][1]}
+            x2={storeMiddlematrix[1][3][0]}
+            y2={storeMiddlematrix[1][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][3][0]}
+            y1={storeMiddlematrix[1][3][1]}
+            x2={storeMiddlematrix[2][2][0]}
+            y2={storeMiddlematrix[2][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][2][0]}
+            y1={storeMiddlematrix[2][2][1]}
+            x2={storeMiddlematrix[3][1][0]}
+            y2={storeMiddlematrix[3][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][1][0]}
+            y1={storeMiddlematrix[3][1][1]}
+            x2={storeMiddlematrix[4][0][0]}
+            y2={storeMiddlematrix[4][0][1]}
+            id="mySVG"
+          />
+          //SQUARE LINE
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[0][2][0]}
+            y1={storeMiddlematrix[0][2][1]}
+            x2={storeMiddlematrix[1][1][0]}
+            y2={storeMiddlematrix[1][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][1][0]}
+            y1={storeMiddlematrix[1][1][1]}
+            x2={storeMiddlematrix[2][0][0]}
+            y2={storeMiddlematrix[2][0][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][0][0]}
+            y1={storeMiddlematrix[2][0][1]}
+            x2={storeMiddlematrix[3][1][0]}
+            y2={storeMiddlematrix[3][1][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][1][0]}
+            y1={storeMiddlematrix[3][1][1]}
+            x2={storeMiddlematrix[4][2][0]}
+            y2={storeMiddlematrix[4][2][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[4][2][0]}
+            y1={storeMiddlematrix[4][2][1]}
+            x2={storeMiddlematrix[3][3][0]}
+            y2={storeMiddlematrix[3][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[3][3][0]}
+            y1={storeMiddlematrix[3][3][1]}
+            x2={storeMiddlematrix[2][4][0]}
+            y2={storeMiddlematrix[2][4][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[2][4][0]}
+            y1={storeMiddlematrix[2][4][1]}
+            x2={storeMiddlematrix[1][3][0]}
+            y2={storeMiddlematrix[1][3][1]}
+            id="mySVG"
+          />
+          <line
+            stroke-width="1px"
+            stroke="#000000"
+            x1={storeMiddlematrix[1][3][0]}
+            y1={storeMiddlematrix[1][3][1]}
+            x2={storeMiddlematrix[0][2][0]}
+            y2={storeMiddlematrix[0][2][1]}
+            id="mySVG"
+          />
+          {/* <line stroke-width="1px" stroke="#000000"  x1="821" y1="77" x2="205" y2="693" id="mySVG"/> */}
+        </svg>
+      </div>
     </div>
   );
 };
-
 export default KeiYenBoard;
