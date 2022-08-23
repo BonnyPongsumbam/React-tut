@@ -1,18 +1,15 @@
 import React, { useState } from "react";
-import PropTypes from "prop-types";
 import "./Login.css";
+import axios from "axios";
 
 
 
-const loginUser = (credentials) => {
-  return fetch('http://localhost:8080/login', {
-    method: 'POST',
-    headers: {
-      'Content-Type': 'application/json'
-    },
-    body: JSON.stringify(credentials)
-  })
-    .then(data => data.json())
+const loginUser = () => {
+  axios.post(`http://localhost:8080/login`)
+      .then(res => {
+        console.log(res);
+        console.log(res.data);
+      })
 }
 
 
@@ -49,6 +46,4 @@ export const Login = ({setToken}) => {
   );
 };
 
-Login.propTypes = {
-  setToken: PropTypes.func.isRequired
-};
+
